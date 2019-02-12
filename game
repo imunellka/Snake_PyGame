@@ -1,0 +1,277 @@
+import pygame
+import sys
+import random
+import time
+import math
+import os
+
+
+pygame.init()
+screen = pygame.display.set_mode( (700, 440))
+clock = pygame.time.Clock()
+
+        
+def load_image(filename):
+    image = pygame.image.load(filename)
+    return image
+
+
+def start_screen():
+    intro=["Правила просты:", "Красные яблоки: 2 балла", "Желтые: 1 балл", "Зеленые: -1 балл", "Пятнистые яблоки: смерть"]
+    line="'SNAKE GAME'"
+    fon = load_image('fon.jpg')
+    screen.blit(fon, (0, 0))
+    fontt = pygame.font.SysFont('serif', 60)
+    text = 60
+    s = fontt.render(line, 1, (50,50,50))
+    rect = s.get_rect()
+    rect.top = text
+    rect.x = 150
+    text += rect.height
+    screen.blit(s, rect)
+    text=170
+    fontt = pygame.font.SysFont('serif', 25)
+    read=[(20,20,20),(172,50,50),(240,240,10),(30,240,30),(220,30,30)]
+    i=0 
+    
+    for line in intro:
+        s = fontt.render(line, 1, read[i])
+        rect = s.get_rect()
+        text += 5
+        rect.top = text
+        rect.x = 150
+        text += rect.height
+        screen.blit(s, rect)
+        i+=1
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                return
+        pygame.display.flip()
+        clock.tick(60)
+start_screen()
+
+
+
+class Game():
+    def __init__(self):
+        self.width = 700
+        self.height = 440
+        self.red = pygame.Color(255, 0, 0)
+        self.green = pygame.Color(109, 158, 77)
+        self.black = pygame.Color(0, 0, 0)
+        self.white = pygame.Color(230, 255, 255)
+        self.brown = pygame.Color(255, 0, 0)
+        self.fps = pygame.time.Clock()
+        self.score = 0
+        
+    def error(self):
+        #проверка
+        check = pygame.init()
+        if check[1] > 0:
+            sys.exit()
+ 
+    def title(self):
+        self.screen = pygame.display.set_mode(( self.width, self.height))
+        pygame.display.set_caption('Zmeika')
+
+        
+    def events(self, change):
+        #отслеживает нажатия
+        for event in pygame.event.get():
+             if event.type == pygame.KEYDOWN:
+                 if event.key == pygame.K_RIGHT:
+                     change = "RIGHT"
+                 elif event.key == pygame.K_LEFT:
+                   change = "LEFT" 
+                 elif event.key == pygame.K_UP:
+                    change = "UP"
+                 elif event.key == pygame.K_DOWN:
+                    change = "DOWN"
+                 elif event.key == pygame.K_ESCAPE:
+                     pygame.quit()
+                     sys.exit()
+        return change
+
+ 
+    def show_score(self, c=1):
+        #Отображение результата
+        fon = pygame.font.SysFont(None, 35)
+        sc = fon.render('Score: {0}'.format(self.score), True, self.white)
+        rec = sc.get_rect()
+        if c == 1:
+            rec.midtop = (80, 20)
+        else:
+            rec.midtop = (360, 120)
+        self.screen.blit(sc, rec)
+
+
+    def game_over(self):
+        f = pygame.font.SysFont(None, 72)
+        go = f.render('Game over', True, self.red)
+        r = go.get_rect()
+        r.midtop = (360, 20)
+        self.screen.blit(go, r)
+        self.show_score(0)
+        pygame.display.flip()
+        time.sleep(3)
+        pygame.quit()
+        sys.exit()
+
+
+        
+class Snake():
+    
+    def __init__(self, color):
+        self.head= [100, 60]
+        self.body = [[100, 60], [80, 60], [60, 60]]
+        self.color = color
+        self.dir = "RIGHT"
+        self.change = self.dir
+
+        
+    def changes(self):
+        if any((self.change == "RIGHT" and not self.dir == "LEFT",self.change == "LEFT" and not self.dir == "RIGHT",
+                self.change == "UP" and not self.dir == "DOWN",self.change == "DOWN" and not self.dir == "UP")):
+             self.dir = self.change
+
+             
+    def end(self, game_over, width, height):
+        if any((self.head[0] > width-20 or self.head[0] < 0,
+            self.head[1] > height-20 or self.head[1] < 0)):
+                game_over()
+        for l in self.body[1:]:
+            if (l[0] == self.head[0] and l[1] == self.head[1]):
+                game_over()
+
+ 
+    def head_position(self):
+        if self.dir == "RIGHT":
+            self.head[0] += 20
+        elif self.dir == "LEFT":
+            self.head[0] -= 20
+        elif self.dir == "UP":
+            self.head[1] -= 20
+        elif self.dir == "DOWN":
+            self.head[1] += 20
+
+
+    def snake_body(self,game_over, score, foo,roo,sta,po, width, height):
+        self.body.insert(0, list(self.head))
+        if (self.head[0] == sta[0] and self.head[1] == sta[1]):
+            sta = [random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            roo = [random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            po=[random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            score += 1
+            
+        elif (self.head[0] == foo[0] and self.head[1] == foo[1]):
+            foo = [random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            roo = [random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            po=[random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            score += 2
+            
+        elif (self.head[0] == roo[0] and self.head[1] == roo[1]):
+            roo = [random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            po=[random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            score -= 1
+            
+        elif (self.head[0] == po[0] and self.head[1] == po[1]):
+            po = [random.randrange(1,  width//20)*20,random.randrange(1, height//20)*20]
+            self.color=(255,0,0)
+            game_over()
+        else:
+            self.body.pop()
+            
+        return score, foo, roo,sta,po
+
+    def draw(self, screen, color):
+        im=load_image("grass.jpg")
+        screen.blit(im, (0,0))
+        for pos in self.body:
+            pygame.draw.rect(screen, self.color, pygame.Rect(pos[0], pos[1], 20, 20))
+
+ 
+class Food():
+
+    def __init__(self, col, width, height): 
+        self.col = col
+        self.x = 20
+        self.y = 20
+        self.foo = [random.randrange(1, width//20)*20,random.randrange(1, height//20)*20]
+
+        
+    def drawf(self, screen):
+        apple=load_image("apple.jpg")
+        screen.blit(apple, (self.foo[0], self.foo[1]))
+
+        
+class Mushroom():
+    
+    def __init__(self, col, width, height): 
+        self.col = col
+        self.x = 20
+        self.y = 20
+        self.roo = [random.randrange(1, width//20)*20,random.randrange(1, height//20)*20]
+
+        
+    def drawm(self, screen):
+        mush=load_image("apple1.jpg")
+        screen.blit(mush, (self.roo[0], self.roo[1]))
+
+class Star():
+    
+    def __init__(self, col, width, height): 
+        self.col = col
+        self.x = 20
+        self.y = 20
+        self.sta = [random.randrange(1, width//20)*20,random.randrange(1, height//20)*20]
+
+        
+    def draws(self, screen):
+        star=load_image("apple2.jpg")
+        screen.blit(star, (self.sta[0], self.sta[1]))
+
+
+class Potion():
+    
+    def __init__(self, col, width, height): 
+        self.col = col
+        self.x = 20
+        self.y = 20
+        self.po = [random.randrange(1, width//20)*20,random.randrange(1, height//20)*20]
+
+        
+    def drawp(self, screen):
+        pos=load_image("apple3.jpg")
+        screen.blit(pos, (self.po[0], self.po[1]))
+        
+game = Game()
+snake = Snake(game.green)
+food = Food(game.brown, game.width, game.height)
+room = Mushroom(game.brown, game.width, game.height)
+star = Star(game.brown, game.width, game.height)
+pos = Potion(game.brown, game.width, game.height)
+game.error()
+game.title()
+
+
+while True:
+
+     snake.change = game.events(snake.change)
+     snake.changes()
+     snake.head_position()
+     game.score, food.foo , room.roo , star.sta ,pos.po= snake.snake_body(game.game_over, game.score, food.foo, room.roo,star.sta,pos.po, game.width, game.height)
+     snake.draw(game.screen, game.white)
+     food.drawf(game.screen)
+     room.drawm(game.screen)
+     star.draws(game.screen)
+     pos.drawp(game.screen)
+     snake.end(game.game_over, game.width, game.height)
+     game.show_score()
+     pygame.display.flip()
+     game.fps.tick(7)
+
